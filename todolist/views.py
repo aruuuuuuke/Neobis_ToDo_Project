@@ -1,9 +1,12 @@
+from .models import Task
+from .forms import PositionForm
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
-from django.shortcuts import render
-from .models import Task
+from django.views.generic.edit import CreateView, UpdateView, DeleteView, FormView
 from django.urls import reverse_lazy
-from django.views.generic.edit import DeleteView, CreateView, UpdateView
+from django.views import View
+from django.shortcuts import redirect
+from django.db import transaction
 
 class TaskList(ListView):
     model = Task
@@ -42,4 +45,17 @@ class TaskDelete(DeleteView):
     model = Task
     context_object_name='task'
     success_url = reverse_lazy('tasks')
+
+
+class TaskReorder(View):
+    def post(self, request):
+        form = PositionForm(request.POST)
+
+        if form.is_valid():
+            positionList = form.cleaned_data["position"].split(',')
+
+            with transaction.atomic():
+                self.request.user.set_task_order(positionList)
+
+        return redirect(reverse_lazy('tasks'))
 
